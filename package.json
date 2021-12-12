@@ -20,5 +20,9 @@
   "homepage": "https://github.com/Tatiana-goit/nodejs-homework#readme",
   "devDependencies": {
     "nodemon": "^2.0.15"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^8.3.0"
   }
 }

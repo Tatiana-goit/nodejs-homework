@@ -1,24 +1,38 @@
 const fs = require('fs/promises')
 const path = require('path')
-const crupto = require('crypto')
+const crypto = require('crypto')
 
 const readContent = async () => {
-    const contactsPath = await fs.readFile(path.join(__dirname,'db','contacts.json'))
-}
-function listContacts() {
-  // ...твой код
-}
-
-function getContactById(contactId) {
-  // ...твой код
+    const contactsPath = await fs.readFile(path.join(__dirname,'db','contacts.json'),'utf8')
+    const result = JSON.parse(contactsPath)
+    // console.log(result);
+    return result
 }
 
-function removeContact(contactId) {
-  // ...твой код
+
+const listContacts = async() =>  {
+  return await readContent();
 }
 
-function addContact(name, email, phone) {
-  // ...твой код
+const getContactById = async (contactId) => {
+  const contacts = await readContent();
+  const [contact] = contacts.filter(contact => contact.id ===contactId)
+  return contact
 }
 
-module.expotrs = { listContacts, getContactById, removeContact, addContact }
+const removeContact = async (contactId) => {
+  const contacts = await readContent();
+  const newContactsList = contacts.filter(contact => contact.id !==contactId)
+  // return newContactsList
+  await fs.writeFile(path.join(__dirname,'db','contacts.json'),JSON.stringify(newContactsList,null,2))
+}
+
+const addContact = async (name, email, phone) => {
+  const contacts = await readContent();
+  const newContact = {name, email, phone, id: crypto.randomUUID()}
+  contacts.push(newContact)
+  await fs.writeFile(path.join(__dirname,'db','contacts.json'),JSON.stringify(contacts,null,2))
+  return newContact
+}
+
+module.exports = { listContacts, getContactById, removeContact, addContact }
