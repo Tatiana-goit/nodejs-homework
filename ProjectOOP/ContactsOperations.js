@@ -17,7 +17,6 @@ program.parse(process.argv)
 
 const argv = program.opts()
 
-
 class ContactsOperations {
   constructor(action, id, name, email, phone) {
     this.action = action
@@ -27,16 +26,16 @@ class ContactsOperations {
     this.phone = phone
   }
 
-  actionHandler = async ( {action, id, name, email, phone }) => {
+  actionHandler = async ({ action, id, name, email, phone }) => {
     switch (action) {
       case 'list':
-        const contacts =await this.listContacts()
+        const contacts = await this.listContacts()
         console.log(chalk.blue('CONTACTS LIST'))
         console.table(contacts)
         break
 
       case 'get':
-        const contactById =await this.getContactById(id)
+        const contactById = await this.getContactById(id)
         if (contactById) {
           console.log(chalk.green('Contact found'))
           console.log(contactById)
@@ -46,28 +45,38 @@ class ContactsOperations {
         break
 
       case 'add':
-        const contact =  await this.addContact(name, email, phone)
+        const contact = await this.addContact(name, email, phone)
         console.log(chalk.yellow('Add new contact'))
         console.log(contact)
         break
 
       case 'remove':
-        await this.removeContact(id)
-        console.log(chalk.yellow('You delete contact '), id)
+        const findId = await this.removeContact(id)
+        if (findId !== -1) {
+          console.log(chalk.yellow('You delete contact '), id)
+        } else {
+          console.log(chalk.yellow('You do not have such contact '))
+        }
         break
-
       default:
         console.warn(chalk.red('Unknown action type!'))
     }
   }
 
   readContent = async () => {
-    const contactsPath =await fs.readFile(
+    const contactsPath = await fs.readFile(
       path.join(__dirname, '../db', 'contacts.json'),
       'utf8',
     )
     const result = JSON.parse(contactsPath)
     return result
+  }
+
+  updateContent = async (contacts) => {
+    await fs.writeFile(
+      path.join(__dirname, '../db', 'contacts.json'),
+      JSON.stringify(contacts, null, 2),
+    )
   }
 
   listContacts = async () => {
@@ -82,28 +91,27 @@ class ContactsOperations {
 
   removeContact = async (contactId) => {
     const contacts = await this.readContent()
-    const newContactsList = contacts.filter(
-      (contact) => contact.id !== contactId,
-    )
-    await fs.writeFile(
-      path.join(__dirname, '../db', 'contacts.json'),
-      JSON.stringify(newContactsList, null, 2),
-    )
+    const index = contacts.findIndex((contact) => contact.id === contactId)
+    if (index !== -1) {
+      const newContactsList = contacts.filter(
+        (contact) => contact.id !== contactId,
+      )
+      this.updateContent(newContactsList)
+    } else {
+      return index
+    }
   }
 
   addContact = async (name, email, phone) => {
-    const contacts =  this.readContent()
+    const contacts = await this.readContent()
     const newContact = { name, email, phone, id: crypto.randomUUID() }
     contacts.push(newContact)
-    await fs.writeFile(
-      path.join(__dirname, '../db', 'contacts.json'),
-      JSON.stringify(contacts, null, 2),
-    )
+    this.updateContent(contacts)
     return newContact
   }
 
   init = () => {
-      this.actionHandler(this.action, this.id, this.name, this.email, this.phone)
+    this.actionHandler(this.action, this.id, this.name, this.email, this.phone)
   }
 }
 
